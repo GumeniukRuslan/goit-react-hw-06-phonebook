@@ -1,29 +1,27 @@
-import { useEffect, useState } from "react";
 import { ContactForm } from "./ContactFrom/ContactForm";
 import { ContactList } from "./ContactList/ContactList";
 import { Filter } from "./Filter/Filter";
 import { toast, Toaster } from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { setFilter } from "redux/filterSlice";
+import { addContact, deleteContact } from "redux/contactsSlice";
 
-export const App = () => {
-
-  const [contacts, setContacts] = useState(localStorage.getItem('contacts') ? JSON.parse(localStorage.getItem('contacts')) : []);
-  const [filter, setFilter] = useState();
-
-  useEffect(() => {
-    localStorage.setItem("contacts", JSON.stringify(contacts));
-  }, [contacts])
+export const App = () => {  
+  const dispatch = useDispatch()
+  const filter = useSelector(state => state.filter)
+  const contacts = useSelector(state => state.contacts)
 
   const saveContact = (contact) => {
     if (contacts.find(obj => obj.name.toLowerCase() === contact.name.toLowerCase())) {
       const notify = () => toast.error('Contact is already in list.');
       return notify()
     }
-    setContacts((prevContacts) => [...prevContacts, contact])
+    dispatch(addContact(contact))
   };
 
-  const deleteContact = (evt) => setContacts(contacts.filter(contact => contact.id !== evt.target.closest('li').id));
+  const removeContact = (evt) => dispatch(deleteContact(contacts.find(contact => contact.id === evt.target.closest('li').id)));
 
-  const filterContacts = (evt) => setFilter(evt.target.value.trim());
+  const filterContacts = (evt) => dispatch(setFilter(evt.target.value.trim()));
 
   return (
     <div>
@@ -33,9 +31,7 @@ export const App = () => {
       {contacts.length
         ? <><h2>Contacts</h2>
             <Filter filterValue={filterContacts} />
-            <ContactList deleteContact={deleteContact} contacts={filter
-              ? contacts.filter(obj => obj.name.toLowerCase().includes(filter.toLowerCase()))
-              : contacts} />
+            <ContactList deleteContact={removeContact} contacts={contacts.filter(obj => obj.name.toLowerCase().includes(filter.toLowerCase()))} />
           </>
         : <p>Add some contacts</p>}
       <Toaster position="top-right" toastOptions={{duration: 1500}} />
